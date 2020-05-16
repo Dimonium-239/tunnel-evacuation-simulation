@@ -1,157 +1,108 @@
 import pygame as pg
 import colors as c
-from tunnel import Tunnel
-from route_lines import RouteLines
+from tunnel import *
 from observer import Observer
 from camera import Camera, camera_configure
-from safe_zone import SafeZones
-from car import Car
-from cell import Cell
 
 import random
 
 from settings import *
 
-pg.init()
 
-win_len_new = DISPLAY
+class Screen:
+    def __init__(self):
+        """
+        Initialize simulation area.
+    
+        """
+        self.screen_len_new = DISPLAY
+        self.screen = pg.display.set_mode(DISPLAY, pg.RESIZABLE)
+        pg.display.set_caption("Fire in tunnel")
 
-screen = pg.display.set_mode(DISPLAY, pg.RESIZABLE)
+        self.bg = pg.Surface(DISPLAY)
+        self.bg.fill(c.BLUE)
+        self.observer = Observer(0, 2)
+        self.tunnel = Tunnel()
+        self.camera = Camera(camera_configure, TUNNEL_LEN + 60, WIN_HEIGHT)
 
-pg.display.set_caption("Fire in tunnel")
-clock = pg.time.Clock()
+    def draw_on_screen(self, left, right):
+        self.screen.blit(self.bg, (0, 0))
+        self.camera.update(self.observer, self.screen_len_new)
+        self.tunnel.blit_tunnel(self.screen, self.camera)
+        self.tunnel.blit_smoke(self.screen, self.camera)
+        self.observer.update(left, right, self.screen_len_new)
 
-bg = pg.Surface(DISPLAY)
-bg.fill(c.BLUE)
 
-observer = Observer(0, 2)
-allGr = pg.sprite.Group()
-allGr.add(observer)
+class Simulation:
+    def __init__(self):
+        pg.init()
+        self.clock = pg.time.Clock()
+        self.left = False 
+        self.right = False
 
-left = right = False
-tun = Tunnel()
-allGr.add(tun)
+        self.fire_radius = 1
+        self.time = 0
+        self.screen = Screen()
+        self.started = False    
 
-for i in range(0, NUM_OF_PATHES + 1):
-    allGr.add(RouteLines(i))
+    def event_handler(self):
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                return True
 
-### Add cars to the cars group ###
-carGr = pg.sprite.Group()
-carsArr = []
-for i in range(10):
-    car = Car()
-    carGr.add(car)
-    carsArr.append(car)
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_LEFT:
+                    self.left = True
+                if event.key == pg.K_RIGHT:
+                    self.right = True
+                if event.key == pg.K_RETURN:
+                    self.started = not self.started
+                if event.key == pg.K_f:
+                    self.screen.observer.rect.x = self.screen.tunnel.get_burning_car().rect.x
+                if event.key == pg.K_HOME:
+                    self.screen.observer.rect.x = MARGIN
+                if event.key == pg.K_END:
+                    self.screen.observer.rect.x = TUNNEL_LEN - MARGIN
 
-### Add people to the people group ###
-people_group = pg.sprite.Group()
 
-### Choose What car will be settle in fire ###
-badCar = carsArr[random.randint(0, len(carsArr) - 1)]
-badCar.image.fill(c.WHITE)
+            if event.type == pg.KEYUP: 
+                if event.key == pg.K_RIGHT:
+                    self.right = False
+                if event.key == pg.K_LEFT:
+                    self.left = False
 
-### Init smoke cells ###
-smokeGr = pg.sprite.Group()
-smokeCells = []
+            if event.type == pg.VIDEORESIZE:
+                win_len_new = (event.w, event.h)
+                self.screen.screen = pg.display.set_mode(win_len_new, pg.RESIZABLE)
+                self.screen.bg = pg.Surface(win_len_new)
+                self.screen.bg.fill(c.BLUE)
+                self.screen.screen_len_new = win_len_new
+            
+        return False
 
-isFire = False
-fireCoor = ()
-for x in range(int(MARGIN / 2), TUNNEL_LEN + int(MARGIN / 2), CELL_SIZE):
-    tmpSmokeYCells = []
-    for y in range(int((WIN_HEIGHT - NUM_OF_PATHES * PATH_LEN) / 2),
-                   int(((WIN_HEIGHT - NUM_OF_PATHES * PATH_LEN) / 2) + PATH_LEN * NUM_OF_PATHES), CELL_SIZE):
-        if isFire == False and (x > badCar.rect[0] and x < badCar.rect[0] + int(1.5 * CELL_SIZE) - 1) and (
-                y > badCar.rect[1] and y < badCar.rect[1] + int(1.5 * CELL_SIZE)):
-            smCell = Cell((x, y), c.RED, 255)
-            smokeGr.add(smCell)
-            tmpSmokeYCells.append(smCell)
-            fireCoor = (len(smokeCells), len(tmpSmokeYCells) - 1)
-            isFire = True
-        else:
-            smCell = Cell((x, y), c.GRAY, 0)
-            smokeGr.add(smCell)
-            tmpSmokeYCells.append(smCell)
-    smokeCells.append(tmpSmokeYCells)
-### --------------------- ###
+    def kills_people(self):
+        people_in_smoke_dict = pg.sprite.groupcollide(self.screen.tunnel.people_group, self.screen.tunnel.smoke_group, False, False)
+        if list(people_in_smoke_dict.keys()):
+            for person in list(people_in_smoke_dict.keys()):
+                person.decrease_hp(list(people_in_smoke_dict.get(person))[-1].get_smoke_density())
+                if(person.get_hp() < 0):
+                    person.kill()
 
-camera = Camera(camera_configure, TUNNEL_LEN + 60, WIN_HEIGHT)
+    def run(self):
+        while not self.event_handler():
+            self.clock.tick(250)            
+            self.screen.draw_on_screen(self.left, self.right)
 
-### Add evacuation exits ###
-safe_zones_group = pg.sprite.Group()
-tunExit = SafeZones((MARGIN / 2, (WIN_HEIGHT - NUM_OF_PATHES * PATH_LEN) / 2), (EXIT_SIZE, PATH_LEN * NUM_OF_PATHES))
-tunEnter = SafeZones((TUNNEL_LEN + MARGIN / 2, (WIN_HEIGHT - NUM_OF_PATHES * PATH_LEN) / 2),
-                     (EXIT_SIZE, PATH_LEN * NUM_OF_PATHES))
+            if(self.started):
+                self.time = self.time + self.clock.get_time()
+                self.time, self.fire_radius = self.screen.tunnel.smoke_spreading_update(self.time, self.fire_radius, self)
 
-j = 1
-for i in range(0, TUNNEL_LEN):
-    if (i % meters_to_pixels(500) == 0):
-        topSZ = SafeZones(
-            (MARGIN / 2 + meters_to_pixels(500) * j, (WIN_HEIGHT - NUM_OF_PATHES * PATH_LEN) / 2 - EXIT_SIZE / 2),
-            (EXIT_SIZE * 2, EXIT_SIZE))
-        downSZ = SafeZones((MARGIN / 2 + meters_to_pixels(500) * j,
-                            (WIN_HEIGHT - NUM_OF_PATHES * PATH_LEN) / 2 - EXIT_SIZE / 2 + NUM_OF_PATHES * PATH_LEN),
-                           (EXIT_SIZE * 2, EXIT_SIZE))
-        allGr.add(topSZ, downSZ)
-        safe_zones_group.add(topSZ, downSZ)
+            #self.kills_people()
+            
+            pg.display.update()
 
-allGr.add(tunExit, tunEnter)
-safe_zones_group.add(tunEnter, tunExit)
+        pg.quit()
 
-fire_spreding_coor = [1, 1]
-fire_radius = 1
-clock = pg.time.Clock()
-time = 0
-fire_waves = 0
-while RUNNING:
-    clock.tick(250)
-    for event in pg.event.get():
-        if event.type == pg.QUIT:
-            RUNNING = False
-
-        if event.type == pg.KEYDOWN and event.key == pg.K_LEFT:
-            left = True
-        if event.type == pg.KEYDOWN and event.key == pg.K_RIGHT:
-            right = True
-
-        if event.type == pg.KEYUP and event.key == pg.K_RIGHT:
-            right = False
-        if event.type == pg.KEYUP and event.key == pg.K_LEFT:
-            left = False
-
-        if event.type == pg.VIDEORESIZE:
-            win_len_new = (event.w, event.h)
-            screen = pg.display.set_mode(win_len_new, pg.RESIZABLE)
-            bg = pg.Surface(win_len_new)
-            bg.fill(c.BLUE)
-
-    screen.blit(bg, (0, 0))
-
-    observer.update(left, right, win_len_new)
-
-    camera.update(observer)
-
-    time = time + clock.get_time()
-
-    if time >= 750:
-        # def f = ...
-        for y in range(0, len(smokeCells[0])):
-            for x in range(0, len(smokeCells)):
-                for i in range(0, 10):
-                    if ((x - fireCoor[0]) ** 2 + (y - fireCoor[1]) ** 2 < (fire_radius ** 2) - fire_radius * 3 * i):
-                        smokeCells[x][y].set_smoke_density(100 + 10 * i)
-
-        fire_radius += 1
-        time = 0
-
-    for a in allGr:
-        screen.blit(a.image, camera.apply(a))
-
-    for car in carGr:
-        screen.blit(car.image, camera.apply(car))
-
-    for a in smokeGr:
-        screen.blit(a.image, camera.apply(a))
-
-    pg.display.update()
-
-pg.quit()
+if __name__ == "__main__":
+    game = Simulation()
+    game.run()
