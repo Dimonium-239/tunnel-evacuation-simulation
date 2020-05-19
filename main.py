@@ -119,7 +119,6 @@ class Simulation:
                 self.time2 = 0
 
             self.rescue_people()
-            
             self.init_text('All people: ' + str(len(self.screen.tunnel.people_array)), 0)
             self.init_text('Evacuated people: ' + str(self.rescue_people_counter), 1)
             self.init_text('Dead people: ' + str(self.deadth_counter), 2)
