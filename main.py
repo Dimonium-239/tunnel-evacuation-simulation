@@ -37,6 +37,7 @@ class Simulation:
     def __init__(self):
         pg.init()
         self.clock = pg.time.Clock()
+        self.font = pg.font.Font('freesansbold.ttf', 16) 
         self.left = False 
         self.right = False
 
@@ -45,6 +46,8 @@ class Simulation:
         self.time2 = 0
         self.screen = Screen()
         self.started = False    
+        self.deadth_counter = 0
+        self.rescue_people_counter = 0
 
     def event_handler(self):
         for event in pg.event.get():
@@ -87,7 +90,18 @@ class Simulation:
             for person in list(people_in_smoke_dict.keys()):
                 person.decrease_hp(list(people_in_smoke_dict.get(person))[-1].get_smoke_density())
                 if(person.get_hp() < 0):
+                    self.deadth_counter += 1
                     person.kill()
+
+    def rescue_people(self):
+        if(pg.sprite.groupcollide(self.screen.tunnel.people_group, self.screen.tunnel.exit_group, True, False)):
+            self.rescue_people_counter += 1
+
+    def init_text(self, text, i=0):
+        text_ = self.font.render(text, True, c.WHITE) 
+        textRect = text_.get_rect()  
+        textRect.center = (MARGIN*3, MARGIN+32*i)
+        self.screen.screen.blit(text_, textRect) 
 
     def run(self):
         while not self.event_handler():
@@ -104,7 +118,12 @@ class Simulation:
                 self.screen.tunnel.move_person()
                 self.time2 = 0
 
-
+            self.rescue_people()
+            
+            self.init_text('All people: ' + str(len(self.screen.tunnel.people_array)), 0)
+            self.init_text('Evacuated people: ' + str(self.rescue_people_counter), 1)
+            self.init_text('Dead people: ' + str(self.deadth_counter), 2)
+            
             pg.display.update()
 
         pg.quit()
