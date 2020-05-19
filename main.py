@@ -42,6 +42,7 @@ class Simulation:
 
         self.fire_radius = 1
         self.time = 0
+        self.time2 = 0
         self.screen = Screen()
         self.started = False    
 
@@ -63,7 +64,7 @@ class Simulation:
                     self.screen.observer.rect.x = MARGIN
                 if event.key == pg.K_END:
                     self.screen.observer.rect.x = TUNNEL_LEN - MARGIN
-
+            
 
             if event.type == pg.KEYUP: 
                 if event.key == pg.K_RIGHT:
@@ -80,7 +81,7 @@ class Simulation:
             
         return False
 
-    def kills_people(self):
+    def kill_people(self):
         people_in_smoke_dict = pg.sprite.groupcollide(self.screen.tunnel.people_group, self.screen.tunnel.smoke_group, False, False)
         if list(people_in_smoke_dict.keys()):
             for person in list(people_in_smoke_dict.keys()):
@@ -97,8 +98,13 @@ class Simulation:
                 self.time = self.time + self.clock.get_time()
                 self.time, self.fire_radius = self.screen.tunnel.smoke_spreading_update(self.time, self.fire_radius, self)
 
-            #self.kills_people()
             
+            self.time2 = self.time2 + self.clock.get_time()
+            if self.time2 >= 450:
+                self.screen.tunnel.move_person()
+                self.time2 = 0
+
+
             pg.display.update()
 
         pg.quit()

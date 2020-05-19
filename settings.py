@@ -10,7 +10,7 @@ def pixels_to_meters(pixels):
     return int((pixels*2.55)/PATH_LEN)
 
 PATH_LEN = 40
-TUNNEL_LEN = meters_to_pixels(600)  #1377.5
+TUNNEL_LEN = meters_to_pixels(800)  #1377.5
 EXIT_SIZE = meters_to_pixels(2)
 
 CAR_MARGIN = meters_to_pixels(1)

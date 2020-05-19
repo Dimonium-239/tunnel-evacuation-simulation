@@ -1,6 +1,8 @@
 import pygame as pg
 import colors as c
 from settings import *
+
+import math
 import random
 
 class Tunnel(pg.sprite.Sprite):
@@ -40,6 +42,7 @@ class Tunnel(pg.sprite.Sprite):
         self.people_group = pg.sprite.Group()
         self.cars_array = []
         self.people_array = []
+        self.exit_array = []
         self.cell_grid = []
 
         self.image = pg.Surface(((TUNNEL_LEN, NUM_OF_PATHES*PATH_LEN)))
@@ -57,6 +60,7 @@ class Tunnel(pg.sprite.Sprite):
         self.__init_fire_place()
         self.find_peoples_coordinates()
         self.fire_x, self.fire_y = self.get_fire_coordinates()
+        self.__find_closest_exit()
 
 
     def smoke_spreading_update(self, time, fire_radius, class_obj):
@@ -79,7 +83,7 @@ class Tunnel(pg.sprite.Sprite):
                             self.smoke_group.add(self.cell_grid[x][y])
 
             fire_radius += 1
-            class_obj.kills_people()
+            class_obj.kill_people()
             time = 0
             return time, fire_radius
         return time, fire_radius
@@ -145,6 +149,73 @@ class Tunnel(pg.sprite.Sprite):
                 if (cell.rect.x in range(self._burning_car.rect[0], self._burning_car.rect[0] + int(1.5 * CELL_SIZE) - 1)) and (cell.rect.y in range(self._burning_car.rect[1], self._burning_car.rect[1] + int(1.5 * CELL_SIZE)) ):
                     return self.cell_grid.index(cell_line), cell_line.index(cell) 
 
+    def move_person(self):
+        for person in self.people_array:
+            x_p, y_p, *_ = person.rect
+            x_e, y_e = person.close_exit
+            step = 0
+            
+            person_TEMP_group = pg.sprite.Group()
+            person_TEMP_group.add(person)
+
+            person_car = pg.sprite.groupcollide(person_TEMP_group, self.cars_group, False, False)
+            if list(person_car.keys()):
+                c = list(person_car.keys())[0]
+                if y_p in range(c.rect[1], c.rect[1]+c.rect[3]+5) and person.prev_step[1] in range(c.rect[1], c.rect[1]+c.rect[3]+5):
+                    person.rect.x = person.rect.x
+                    if y_p < y_e:
+                        person.rect.y += 5
+                    if y_p > y_e:
+                        person.rect.y -= 5
+                    person.set_prev_step( (person.rect.x, person.rect.y) )
+                    continue
+                if y_p in range(c.rect[0], c.rect[0]+c.rect[2]+5) and person.prev_step[0] in range(c.rect[0], c.rect[0]+c.rect[2]+5):
+                    person.rect.x = person.rect.x
+                    if x_p < x_e:
+                        person.rect.x += 5
+                    if x_p > x_e:
+                        person.rect.x -= 5
+                    person.set_prev_step( (person.rect.x, person.rect.y) )
+                    continue
+            else:
+                if x_p > x_e:
+                    step = -5
+                if x_p < x_e:
+                    step = +5
+
+                x = person.rect.x + step
+                y = self.__path_equality((x_p,y_p), (x_e, y_e), x)
+                person.set_prev_step((person.rect[0], person.rect[1]))
+                person.rect.x = x
+                person.rect.y = y 
+
+
+    def __find_closest_exit(self):
+        for person in self.people_array:
+            close_exit = TUNNEL_LEN
+            for e in self.exit_array:
+                x, y, s_x, s_y = e.rect
+                x_p, y_p, *_ = person.rect
+
+                centre = (x + s_x//2, y + s_y//2) 
+            
+                if int( ((x_p - centre[0])**2 + (y_p - centre[1])**2)**0.5 ) < close_exit:
+                    close_exit = int( ((x_p - centre[0])**2 + (y_p - centre[1])**2)**0.5 )
+                    if x < y:
+                        person.close_exit = centre[0], person.rect.y
+                    else:
+                        person.close_exit = centre
+        
+    
+    def __path_equality(self, dot1, dot2, x):
+        x_A, y_A = dot1
+        x_B, y_B = dot2
+        try:
+            y = ((y_A - y_B)/(x_A - x_B))*x + (y_A - (y_A - y_B)/(x_A - x_B)*x_A)
+        except:
+            y = ((y_A - y_B)/(x_A - x_B+1))*x + (y_A - (y_A - y_B)/(x_A - x_B+1)*x_A)
+        return y 
+            
 
     def __draw_tunnel(self):
         """
@@ -193,18 +264,22 @@ class Tunnel(pg.sprite.Sprite):
         tunEnter = _SafeZones((TUNNEL_LEN + MARGIN / 2, (WIN_HEIGHT - NUM_OF_PATHES * PATH_LEN) / 2),
                      (EXIT_SIZE, PATH_LEN * NUM_OF_PATHES))
         
+        self.exit_array.extend([tunEnter, tunExit])
         self.exit_group.add([tunEnter,tunExit])
 
-        for i in range(0, TUNNEL_LEN):
-            if (i % meters_to_pixels(500) == 0):
-                topSZ = _SafeZones(
-                    (MARGIN / 2 + meters_to_pixels(500), (WIN_HEIGHT - NUM_OF_PATHES * PATH_LEN) / 2 - EXIT_SIZE / 2),
-                    (EXIT_SIZE * 2, EXIT_SIZE))
-                downSZ = _SafeZones((MARGIN / 2 + meters_to_pixels(500),
-                                    (WIN_HEIGHT - NUM_OF_PATHES * PATH_LEN) / 2 - EXIT_SIZE / 2 + NUM_OF_PATHES * PATH_LEN),
-                                (EXIT_SIZE * 2, EXIT_SIZE))
-                self.exit_group.add(topSZ, downSZ)
-                self.exit_group.add(topSZ, downSZ)
+        ev_exits_len = meters_to_pixels(500)
+        if TUNNEL_LEN > ev_exits_len:
+            for i in range(ev_exits_len, TUNNEL_LEN):
+                if (i % ev_exits_len == 0):
+                    topSZ = _SafeZones(
+                        (MARGIN / 2 + ev_exits_len, (WIN_HEIGHT - NUM_OF_PATHES * PATH_LEN) / 2 - EXIT_SIZE / 2),
+                        (EXIT_SIZE * 2, EXIT_SIZE))
+                    downSZ = _SafeZones((MARGIN / 2 + ev_exits_len,
+                                        (WIN_HEIGHT - NUM_OF_PATHES * PATH_LEN) / 2 - EXIT_SIZE / 2 + NUM_OF_PATHES * PATH_LEN),
+                                    (EXIT_SIZE * 2, EXIT_SIZE))
+                    self.exit_group.add(topSZ, downSZ)
+                    self.exit_array.extend([topSZ, downSZ])
+
 
     def __make_car_burn(self):
         """
@@ -315,11 +390,20 @@ class _Person(pg.sprite.Sprite):
         self.image = pg.Surface((CELL_SIZE, CELL_SIZE))
         self.image.fill( (0, 255, 0) )
         self.rect = pg.Rect(coord, (CELL_SIZE, CELL_SIZE))
+
         self.hp = 100
+        self.close_exit = 0
+        self.prev_step = ()
     
     def get_hp(self):
         return self.hp
-        
+
+    def set_prev_step(self, ps):
+        self.prev_step = ps
+
+    def get_prev_step(self):
+        return self.prev_step
+    
     def decrease_hp(self, smoke_density):
         if smoke_density == 110:
             self.hp -= 2
