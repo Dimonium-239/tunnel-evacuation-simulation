@@ -4,10 +4,6 @@ from tunnel import *
 from observer import Observer
 from camera import Camera, camera_configure
 
-import random
-import threading
-import time
-
 from settings import *
 
 
@@ -105,13 +101,8 @@ class Simulation:
         textRect.center = (MARGIN*3, MARGIN+32*i)
         self.screen.screen.blit(text_, textRect) 
     
-    def move(self):
-        while True:
-            self.screen.tunnel.move_person()
-            time.sleep(1)
 
     def run(self):
-        #smoke_mowing = self.screen.tunnel.smoke_spreading_update(self.time, self.fire_radius, self)
         while not self.event_handler():
             self.clock.tick(250)            
             self.screen.draw_on_screen(self.left, self.right)
