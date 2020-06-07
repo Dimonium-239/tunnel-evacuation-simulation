@@ -17,23 +17,24 @@ class Menu:
         self.window.title("Welcome to LikeGeeks app")
         self.window.geometry('500x500')
         
-        self.path_len_i = self.line('Length of path', 0)
-        self.tunnel_len_i = self.line('Length of tunnel', 1)
-        self.num_of_pathes_i = self.line('Number of path', 2)
-        self.exit_size_i = self.line('Exit size', 3)
-        self.car_margin_i = self.line('Margin of car', 4)
-        self.car_quantity_i = self.line('Car quantity', 5)
-        self.margin_i = self.line('Global margin (auxity)', 6)
+        self.path_len_i = self.line('Length of path',self.path_len , 0)
+        self.tunnel_len_i = self.line('Length of tunnel', self.pixels_to_meters(self.tunnel_len)+1, 1)
+        self.num_of_pathes_i = self.line('Number of path', self.num_of_pathes, 2)
+        self.exit_size_i = self.line('Exit size', self.pixels_to_meters(self.exit_size)+1, 3)
+        self.car_margin_i = self.line('Margin of car', self.pixels_to_meters(self.car_margin)+1, 4)
+        self.car_quantity_i = self.line('Car quantity', self.car_quantity, 5)
+        self.margin_i = self.line('Global margin (auxity)', self.margin, 6)
 
         self.btn = Button(self.window, text="Subbmit", command=self.clicked)
         self.btn.grid(column=1, row=7)
         self.window.mainloop()
     
 
-    def line(self, text, row):
+    def line(self, text, def_text, row):
         self.lbl = Label(self.window, text=text)
         self.lbl.grid(column=0, row=row)
         self.txt = Entry(self.window, width=25)
+        self.txt.insert(0, str(def_text))
         self.txt.grid(column=1, row=row)
         return self.txt
     

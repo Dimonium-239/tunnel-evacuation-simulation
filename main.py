@@ -128,6 +128,5 @@ class Simulation:
 
 if __name__ == "__main__":
     aa = Menu()
-    
     game = Simulation(aa.get_settings())
     game.run()
