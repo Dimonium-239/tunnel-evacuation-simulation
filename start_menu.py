@@ -15,7 +15,9 @@ class Menu:
 
         self.window = Tk()
         self.window.title("Welcome to LikeGeeks app")
-        self.window.geometry('500x500')
+        self.window.update()
+        self.window.minsize(self.window.winfo_width(), self.window.winfo_height())
+        #self.window.geometry('500x500')
         
         self.path_len_i = self.line('Length of path',self.path_len , 0)
         self.tunnel_len_i = self.line('Length of tunnel', self.pixels_to_meters(self.tunnel_len)+1, 1)
