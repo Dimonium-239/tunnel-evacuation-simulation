@@ -4,8 +4,6 @@ from tunnel import *
 from observer import Observer
 from camera import Camera, camera_configure
 
-import random
-
 from settings import *
 
 
@@ -102,6 +100,7 @@ class Simulation:
         textRect = text_.get_rect()  
         textRect.center = (MARGIN*3, MARGIN+32*i)
         self.screen.screen.blit(text_, textRect) 
+    
 
     def run(self):
         while not self.event_handler():
@@ -113,10 +112,10 @@ class Simulation:
                 self.time, self.fire_radius = self.screen.tunnel.smoke_spreading_update(self.time, self.fire_radius, self)
 
             
-            self.time2 = self.time2 + self.clock.get_time()
-            if self.time2 >= 450:
-                self.screen.tunnel.move_person()
-                self.time2 = 0
+                self.time2 = self.time2 + self.clock.get_time()
+                if self.time2 >= 450:
+                    self.screen.tunnel.move_person()
+                    self.time2 = 0
 
             self.rescue_people()
             self.init_text('All people: ' + str(len(self.screen.tunnel.people_array)), 0)

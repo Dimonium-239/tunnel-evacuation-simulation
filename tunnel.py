@@ -51,7 +51,7 @@ class Tunnel(pg.sprite.Sprite):
         self.rect = pg.Rect( (MARGIN, (WIN_HEIGHT-NUM_OF_PATHES*PATH_LEN)/2), (TUNNEL_LEN, NUM_OF_PATHES*PATH_LEN) )        
         self._smoke_time = 0
 
-        self.__draw_cars(100)       # Set numbers of car on the tunnel
+        self.__draw_cars(10)       # Set numbers of car on the tunnel
 
         self.__draw_tunnel()
         self.__draw_evacuating_exites()
@@ -92,12 +92,16 @@ class Tunnel(pg.sprite.Sprite):
     def find_peoples_coordinates(self):
         """
         Iterate by array of cars to generate one person near the car.
-
-        TODO: Generate rondomly 1-4 peoples for small cars (<4 m)
-        TODO: Generate rondomly 1-8 peoples for small cars (>13 m)  
         """
         for car in self.cars_array:
-            self.__init_person(car.rect.x, car.rect.y + PATH_LEN-CAR_MARGIN + 1)
+            print(NUM_OF_PATHES*PATH_LEN)
+            if car.size[0] >= meters_to_pixels(8):
+                for i in range(random.randint(3, 8)):
+                    self.__init_person(car.rect.x + 15*i, car.rect.y + PATH_LEN-CAR_MARGIN + 1)
+            else:
+                for i in range(1,random.randint(1, 5)):
+                    self.__init_person(car.rect.x + (15 + i)*int(bool(2//i)), \
+                        car.rect.y + (PATH_LEN-CAR_MARGIN+1)*(1-(i%2)) - (CAR_MARGIN+1-CELL_SIZE*2)*(i%2))
 
     def blit_tunnel(self, surface, camera):
         """
@@ -377,11 +381,14 @@ class _Car(pg.sprite.Sprite):
     """
     def __init__(self):
         pg.sprite.Sprite.__init__(self)
-        car_sizes = [meters_to_pixels(3.3), meters_to_pixels(3.6), meters_to_pixels(4), meters_to_pixels(3.3), meters_to_pixels(8)]
+        car_sizes = [meters_to_pixels(3.3), meters_to_pixels(3.6), meters_to_pixels(4), \
+            meters_to_pixels(3.3), meters_to_pixels(8)]
         self.size = (random.choice(car_sizes), PATH_LEN-CAR_MARGIN)
         self.image = pg.Surface(self.size)
         self.image.fill(c.RED)
-        self.rect = pg.Rect((random.randrange(MARGIN, TUNNEL_LEN), ((WIN_HEIGHT-NUM_OF_PATHES*PATH_LEN)/2) + PATH_LEN*random.randrange(0, NUM_OF_PATHES) + CAR_MARGIN/2), self.size )
+        self.rect = pg.Rect((random.randrange(MARGIN, TUNNEL_LEN), \
+                    ((WIN_HEIGHT-NUM_OF_PATHES*PATH_LEN)/2) + \
+                    PATH_LEN*random.randrange(0, NUM_OF_PATHES) + CAR_MARGIN/2), self.size )
 
 
 class _Person(pg.sprite.Sprite):
