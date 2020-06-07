@@ -12,8 +12,8 @@ class Observer(pg.sprite.Sprite):
         self.image.fill(c.RED)
         self.rect = pg.Rect(x, y, 20, 20)
 
-    def update(self, left, right, win_len_new):
-        right_margin = TUNNEL_LEN
+    def update(self, left, right, win_len_new, tunnel_len, margin):
+        right_margin = tunnel_len
         if(self.rect.x >= 30 and self.rect.x <= right_margin):
             if left:
                 self.xvel = -10
@@ -21,8 +21,8 @@ class Observer(pg.sprite.Sprite):
                 self.xvel = 10
             if not (left or right):
                 self.xvel = 0
-        if(self.rect.x < MARGIN):
-            self.rect.x = MARGIN
+        if(self.rect.x < margin):
+            self.rect.x = margin
             self.xvel = 0
         if(self.rect.x > right_margin):
             self.rect.x = right_margin

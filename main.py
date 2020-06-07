@@ -3,12 +3,13 @@ import colors as c
 from tunnel import *
 from observer import Observer
 from camera import Camera, camera_configure
+from start_menu import *
 
 from settings import *
 
 
 class Screen:
-    def __init__(self):
+    def __init__(self, settings_tuple):
         """
         Initialize simulation area.
     
@@ -17,22 +18,24 @@ class Screen:
         self.screen = pg.display.set_mode(DISPLAY, pg.RESIZABLE)
         pg.display.set_caption("Fire in tunnel")
 
+
         self.bg = pg.Surface(DISPLAY)
         self.bg.fill(c.BLUE)
         self.observer = Observer(0, 2)
-        self.tunnel = Tunnel()
-        self.camera = Camera(camera_configure, TUNNEL_LEN + 60, WIN_HEIGHT)
+        self.tunnel = Tunnel(settings_tuple)
+        self.camera = Camera(camera_configure, settings_tuple[1] + 60, WIN_HEIGHT)
+        self.settings_tuple = settings_tuple
 
-    def draw_on_screen(self, left, right):
+    def draw_on_screen(self, r, left, right):
         self.screen.blit(self.bg, (0, 0))
         self.camera.update(self.observer, self.screen_len_new)
-        self.tunnel.blit_tunnel(self.screen, self.camera)
-        self.tunnel.blit_smoke(self.screen, self.camera)
-        self.observer.update(left, right, self.screen_len_new)
+        self.tunnel.blit_tunnel(r ,self.screen, self.camera)
+        #self.tunnel.blit_smoke(self.screen, self.camera)
+        self.observer.update(left, right, self.screen_len_new, self.settings_tuple[1], self.settings_tuple[6])
 
 
 class Simulation:
-    def __init__(self):
+    def __init__(self, settings_tuple):
         pg.init()
         self.clock = pg.time.Clock()
         self.font = pg.font.Font('freesansbold.ttf', 16) 
@@ -42,7 +45,7 @@ class Simulation:
         self.fire_radius = 1
         self.time = 0
         self.time2 = 0
-        self.screen = Screen()
+        self.screen = Screen(settings_tuple)
         self.started = False    
         self.deadth_counter = 0
         self.rescue_people_counter = 0
@@ -98,34 +101,33 @@ class Simulation:
     def init_text(self, text, i=0):
         text_ = self.font.render(text, True, c.WHITE) 
         textRect = text_.get_rect()  
-        textRect.center = (MARGIN*3, MARGIN+32*i)
+        textRect.center = (30*3, 30+32*i)
         self.screen.screen.blit(text_, textRect) 
     
 
     def run(self):
         while not self.event_handler():
+            self.screen.draw_on_screen(self.fire_radius, self.left, self.right)
             self.clock.tick(250)            
-            self.screen.draw_on_screen(self.left, self.right)
-
             if(self.started):
                 self.time = self.time + self.clock.get_time()
-                self.time, self.fire_radius = self.screen.tunnel.smoke_spreading_update(self.time, self.fire_radius, self)
-
             
                 self.time2 = self.time2 + self.clock.get_time()
                 if self.time2 >= 450:
                     self.screen.tunnel.move_person()
                     self.time2 = 0
-
+                    self.fire_radius += 4
+            self.kill_people()
             self.rescue_people()
             self.init_text('All people: ' + str(len(self.screen.tunnel.people_array)), 0)
             self.init_text('Evacuated people: ' + str(self.rescue_people_counter), 1)
             self.init_text('Dead people: ' + str(self.deadth_counter), 2)
-            
-            pg.display.update()
 
+            pg.display.update()
         pg.quit()
 
 if __name__ == "__main__":
-    game = Simulation()
+    aa = Menu()
+    
+    game = Simulation(aa.get_settings())
     game.run()
