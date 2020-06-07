@@ -247,7 +247,7 @@ class World:
     def evacuate_people(self):
         """
         People evacuation from the smoked tunnel.
-        Person attempts to go to the nearest exit. If it is impossible - go up, then down, then to the another exit.
+        Person attempts to go to the nearest exit. If it is impossible - go up, then - down, then - to the another exit.
         """
         for x, y in self.find_person_cells():
             try:
@@ -269,7 +269,6 @@ class World:
                     if self.generation[x + 1][y].is_empty or self.generation[x + 1][y].is_smoke:
                         self.generation[x][y].remove_person()
                         self.generation[x + 1][y].put_person_here()
-
                     elif self.generation[x][y - 1].is_empty or self.generation[x][y - 1].is_smoke:
                         self.generation[x][y].remove_person()
                         self.generation[x][y - 1].put_person_here()

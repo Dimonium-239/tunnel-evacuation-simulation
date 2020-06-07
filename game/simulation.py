@@ -92,5 +92,5 @@ class SmokedTunnelSimulation:
 
 
 if __name__ == "__main__":
-    game = SmokedTunnelSimulation(200, 40)
+    game = SmokedTunnelSimulation(100, 40)
     game.run()
