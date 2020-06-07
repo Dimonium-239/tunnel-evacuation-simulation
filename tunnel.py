@@ -41,7 +41,8 @@ class Tunnel(pg.sprite.Sprite):
         self.car_margin, \
         self.cell_size, \
         self.num_of_pathes, \
-        self.margin = settings_tuple
+        self.margin, \
+        self.car_quantity = settings_tuple
 
 
         self.tunnel_group = pg.sprite.Group()
@@ -59,7 +60,7 @@ class Tunnel(pg.sprite.Sprite):
         self.rect = pg.Rect( (self.margin, (WIN_HEIGHT-self.num_of_pathes*self.path_len)/2), (self.tunnel_len, self.num_of_pathes*self.path_len) )        
         self._smoke_time = 0
 
-        self.__draw_cars(100)       # Set numbers of car on the tunnel
+        self.__draw_cars(self.car_quantity)       # Set numbers of car on the tunnel
 
         self.__draw_tunnel()
         self.__draw_evacuating_exites()

@@ -11,6 +11,7 @@ class Menu:
         self.cell_size = int(self.car_margin/3)
         self.num_of_pathes = 4
         self.margin = 30
+        self.car_quantity = 100
 
         self.window = Tk()
         self.window.title("Welcome to LikeGeeks app")
@@ -21,7 +22,7 @@ class Menu:
         self.num_of_pathes_i = self.line('Number of path', 2)
         self.exit_size_i = self.line('Exit size', 3)
         self.car_margin_i = self.line('Margin of car', 4)
-        #self.cell_size_i = self.line('Cell size', 5)
+        self.car_quantity_i = self.line('Car quantity', 5)
         self.margin_i = self.line('Global margin (auxity)', 6)
 
         self.btn = Button(self.window, text="Subbmit", command=self.clicked)
@@ -43,7 +44,8 @@ class Menu:
                 self.car_margin, \
                 self.cell_size, \
                 self.num_of_pathes, \
-                self.margin
+                self.margin,    \
+                self.car_quantity
 
     def clicked(self):
         if self.path_len_i.get():
@@ -56,8 +58,8 @@ class Menu:
             self.exit_size = self.meters_to_pixels(int(self.exit_size_i.get()))
         if self.car_margin_i.get():
             self.car_margin = self.meters_to_pixels(int(self.car_margin_i.get()))
-        #if self.cell_size_i.get():
-        #    self.cell_size = int(self.cell_size_i.get())
+        if self.car_quantity_i.get():
+            self.car_quantity = int(self.car_quantity_i.get())
         if self.margin_i.get():
             self.margin = int(self.margin_i.get())
         self.window.destroy()
